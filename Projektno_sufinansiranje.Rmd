@@ -1,0 +1,335 @@
+---
+title: "Projektno_sufinansiranje"
+author: "Dusko Medic"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+
+
+
+```{r}
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(tidyr)
+library(readr)
+library(purrr)
+library(stringr)
+library(viridis)
+library(hrbrthemes)
+
+
+projektiUkupno <- readxl::read_xlsx("data/Projektno_sufinansiranje.xlsx")
+
+projekti <- projektiUkupno %>% filter(dinari!=0)
+
+projektiBezKonkursa <- projektiUkupno %>% filter(dinari==0)
+
+projekti$godina <- as.factor(projekti$godina)
+projekti$tema <- as.factor(projekti$tema)
+
+
+jedinstveni <- unique(projekti$podnosilac)
+
+```
+
+
+
+## Uvodne reči
+
+Pred vama je publikacija koja je izrađena u okviru projekta „Otvorenim podacima do kvalitetnijeg projektnog sufinansiranja medijskih sadržaja“, koju je realizovao novosadski Centar za održive zajednice u saradnji sa Medijskim odeljenjem Misije OEBS-a u Beogradu i Ministarstvom kulture i informisanja Republike Srbije. Ovo nije prvi put da se naša organizacija bavi analizom medijskih konkursa: podsećamo da smo učestvovali u izradi Bele knjige konkursnog sufinansiranja , 2016. godine, u saradnji sa novinarskim i medijskim udruženjima.
+
+Projekat „Otvorenim podacima do kvalitetnijeg projektnog sufinansiranja medijskih sadržaja“ je, u prvom svom delu, podrazumevao temeljit i dubinski rad na prikupljanju dostupnih podataka o procesu konkursnog sufinansiranja javnog interesa u sferi javnog informisanja u periodu od početka 2015. do kraja kraja 2021. godine, i to na svim nivoima vlasti. Prikupljani su podaci iz konkursa Ministarstva kulture i informisanja, vojvođanskog Sekretarijata za kulturu, javno informisanje i odnose sa verskim zajednicama, kao i konkursa raspisanih na nivou lokalnih samouprava, odnosno gradova i opština. Činjenica da smo sakupili i analizirali podatke o čak `r nrow(projekti)` odobrenih medijskih projekata (`r length(jedinstveni)` podnosilaca) najbolje svedoči o obimu posla. Postojeće baze podataka o odobrenim projetima, kao što je UNS-ova baza ili baza “Raskrikavanje”, korišćene su za nedostajuće informacije ukoliko lokalna samouprava nije dostavila rešenja konkursa tokom trajanja projekta. Dobra vest je da je ogroman procenat lokalnih samouprava odgovorio u kratkom vremenu na zahteve upućene po Zakonu o dostupnosti informacija od javnog značaja. Sa druge strane, rešenja o dodeli sredstava viših organa vlasti (republike i pokrajine) dostupni su na njihovim sajtovima. Kolegama iz UNS-a, drugih novinarskih i medijskih organizacija, kao i “Kriku” ovom prilikom se najsrdačnije zahvaljujemo. Zahvaljujemo se i lokalnim samoupravama koje su nam dostavili tražene podatke, u nadi da će naš projekat doprineti da se usavrši metodologija njihovog daljeg prikupljanja i postavljanja na Portal otvorenih podataka.
+
+Projektu, dakle, nije bio samo cilj prikupljanje i analiza podataka već, uopšte, promovisanje otvorenih baza podataka u sferi javnih usluga. Od otvorenih i mašinski čitljivih podataka umnogome zavisi transparentnost vlasti i unapređenje standarda rada javnih službi. Razvoj otvorenih baza podataka omogućava i olakšava kontrolu rezultata rada institucija, što je preduslov za razvoj demokratskog i modernog društva. U tom smislu, u okviru realizacije ovog projekta razvili smo web aplikaciju koja će vam omogućiti da na različite načine pretražujete i analizirate prikupljene podatke, ali i da ih preuzmete u funkcionalnom formatu koji vam omogućava dalji rad na njima. Dakle, cilj je da istraživačima, medijskim poslenicima, predstavnicima vlasti, ali i građanima, omogućimo pristup podacima koje mogu da budu podloga za neka buduća istraživanja medijskog tržišta i odnosa između vlasti i medija. Osim toga, na našem sajtu  možete preuzeti i druge proizvode našeg projekta. Na sajtu možete da pronađete i link ka kodu za kreiranje same aplikacije, što još više doprinosi otvorenosti našeg rada, i predstavlja važan element u objavljivanju otvorenih podataka, a to je njihova vizuelna prezentacija. Uz pomoć koda, korisnici programskog jezika R moći će da ostvare dodatni uvid u podatke i način na koji su oni obrađeni, a kod je reproducibilan i može da se koristi za druge radove i analize. Kod i metodologija, koji su slobodni za preuzimanje pod licencom (moram samo da vidim kako se tacno zove), mogu da posluže zainteresovanim da prave slične web aplikacije uz pomoć kojih je lakše prati procese konkursnog sufinansiranja medijskih sadržaja u lokalnim zajednicama. Naš projekat i njegovi rezultati će, verujemo, doprineti transparentnosti celokupnog procesa i promovisanju dobrih praksi kroz evaluaciju odobrenih projekata.
+
+Svi podaci su takođe dostupni i na Portalu otvorenih podataka Republike Srbije. Naš cilj je da podržimo i preporukama potpomognemo po nama važan zadatak vlasti u procesu evrointegracija – da razviju i učine pristupačnim i funkcionalnim podatke koje “proizvode”.
+
+Za razliku od postojećih baza podataka, naš projekat po prvi put uvodi i klasifikaciju odobrenih projekata po tematskom okviru. Teme odobrenih projekata su izvođene iz njihovih naziva, a razvrstani su u osam kategorija: ekologija, ekonomija, informativni progam, kultura, neprivilegovane grupe, ostalo, sadržaj na manjinskim jezicima, sport. Iako smo svesni da nazivi projekata nisu zamena za evaluaciju samih sadržaja koji su proizvedeni javnim novcem, smatrali smo da oni mogu da ukažu na trendove davanja u ovoj oblasti. 
+
+Važno je reći da će naš projekat biti aktivan i u narednom periodu, odnosno da ćemo veoma rado sve ispravke (greške su moguće zbog količine i kompleksnosti podataka) i sugestije uvrstiti u naše izveštaje, pa vas molimo da nas u tu svrhu slobodno kontaktirate.
+
+
+# ANALIZA PRIKUPLJENIH PODATAKA
+
+```{r}
+zbirnopoorgani3start<- projekti%>%
+  filter(organ=="Ministarstvo kulture")
+
+zbirnopoorgani2start<- projekti%>%
+  filter(organ=="Pokrajinski sekretarijat za kulturu i javno informisanje")
+ 
+zbirnopoorgani4start<- projekti%>%
+  filter(organ!="Ministarstvo kulture") %>%filter(organ!="Pokrajinski sekretarijat za kulturu i javno informisanje")
+  
+lsamouprave <- unique(zbirnopoorgani4start$organ)
+
+```
+
+U periodu od početka 2015. godine do kraja 2021. godine ukupan broj odobrenih medijskih projekata na svim nivoima vlasti iznosi `r nrow(projekti)`, a od toga je Ministarstvo finansiralo `r nrow(zbirnopoorgani3start)`, Sekretarijat `r nrow(zbirnopoorgani2start)`, a lokalne samouprave (njih ukupno `r length(lsamouprave)`) - `r nrow(zbirnopoorgani4start)`
+
+
+```{r}
+
+zbirnoposektorima<- projekti%>%
+  group_by(,godina)%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnoposektorima$ukupnoevri<- format(zbirnoposektorima$ukupnoevri,big.mark = ",")
+zbirnoposektorima$ukupnorsd<- format(zbirnoposektorima$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnoposektorima,rownames = FALSE, caption = 'Table 1: Ukupan broj i suma podržanih medijskih projekata po godinama - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+```{r}
+ggplot(zbirnoposektorima, aes(godina, ukupnoevri)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupna sredstva dodeljena podržanim medijskim projekatima (u evrima)",
+    subtitle = "Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+
+  geom_text(mapping = aes(label=ukupnoevri), position = position_dodge(width = 0.9), cex=2, vjust=4)
+
+```
+
+
+```{r}
+ggplot(zbirnoposektorima, aes(godina, brojprojekata)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupan broj podržanih medijskih projekata",
+    subtitle = "Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=brojprojekata), position = position_dodge(width = 0.9), cex=2, vjust=4)
+
+
+
+```
+
+
+```{r}
+zbirnopotemama<- projekti%>%
+  group_by(,tema)%>%group_by(,godina)%>%group_by(,tema)%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopotemama$ukupnoevri<- format(zbirnopotemama$ukupnoevri,big.mark = ",")
+zbirnopotemama$ukupnorsd<- format(zbirnopotemama$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopotemama,rownames = FALSE, caption = 'Table 2: Ukupan broj i suma podržanih medijskih projekata po temama - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 9))
+
+
+```
+
+
+
+```{r}
+ggplot(zbirnopotemama, aes(tema, ukupnoevri)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none", axis.title = element_blank(), axis.text.x = element_blank())+labs(
+    title = "Ukupna sredstva dodeljena podržanim medijskim projekatima (u evrima) po temama",
+    subtitle = "Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+
+  geom_text(mapping = aes(label=tema), position = position_dodge(width = 0.9), cex=2, vjust=4)
+
+```
+
+
+```{r}
+
+zbirnopotemama1<- projekti%>%
+  group_by(godina, tema)%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopotemama1$ukupnoevri<- format(zbirnopotemama1$ukupnoevri,big.mark = ",")
+zbirnopotemama1$ukupnorsd<- format(zbirnopotemama1$ukupnorsd,big.mark = ",")
+
+
+DT::datatable(zbirnopotemama1,rownames = FALSE, caption = 'Table 3: Ukupna sredstva dodeljena podržanim medijskim projekatima (u evrima) po temama - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 15))
+```
+
+```{r}
+
+ggplot(zbirnopotemama1, aes(x=godina, y=ukupnoevri, color=tema, fill=tema))+
+geom_bar(stat="identity", position="dodge")+facet_wrap("tema")+ theme(legend.position = "none", axis.text.y = element_blank())+
+  labs(
+    title = "Ukupna sredstva dodeljena podržanim medijskim projekatima (u evrima) po temama i godinama",
+    subtitle = "Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+geom_text(mapping = aes(label=ukupnoevri), position = position_dodge(width = 0.9), cex=2, vjust=4)
+
+```
+
+## Ukupna sredstva po organima - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas
+
+```{r}
+zbirnopoorgani<- projekti%>%
+  group_by(,organ)%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani$ukupnoevri<- format(zbirnopoorgani$ukupnoevri,big.mark = ",")
+zbirnopoorgani$ukupnorsd<- format(zbirnopoorgani$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopoorgani,rownames = FALSE, caption = 'Table 4: Ukupna sredstva po organima - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+```{r}
+zbirnopoorgani1<- projekti%>%
+  group_by(godina,organ)%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani1$ukupnoevri<- format(zbirnopoorgani1$ukupnoevri,big.mark = ",")
+zbirnopoorgani1$ukupnorsd<- format(zbirnopoorgani1$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopoorgani1,rownames = FALSE, caption = 'Table 5: Ukupna sredstva po organima u evrima - Svi nivoi vlasti u Republici Srbiji od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+```{r}
+projektiTopOrgani <- projekti%>%
+filter(organ=="Ministarstvo kulture" | organ=="Pokrajinski sekretarijat za kulturu i javno informisanje" | organ=="Novi Pazar" | organ=="Beograd" | organ=="Niš" | organ=="Novi Sad")
+
+zbirnopoorgani6 <- projektiTopOrgani%>%
+  group_by(godina, organ)%>%
+  summarize(ukupnoevri=sum(evri))
+
+zbirnopoorgani7 <- spread(zbirnopoorgani6, organ, ukupnoevri)
+
+zbirnopoorgani8 <- data.frame(zbirnopoorgani7)
+
+zbirnopoorgani8$godina <- as.numeric(as.character(zbirnopoorgani8$godina))
+
+ggp1 <- ggplot(zbirnopoorgani8, aes(x=godina))+
+  geom_line(aes(y=Beograd), size=1, color="blue")+
+  geom_point(aes(y=Beograd), size=2, color="blue")+
+  geom_line(aes(y=Niš), size=1, color="red")+
+  geom_point(aes(y=Niš), size=2, color="red")+
+  geom_line(aes(y=Novi.Sad), size=1, color="orange")+
+  geom_point(aes(y=Novi.Sad), size=2, color="orange")+
+  geom_line(aes(y=Ministarstvo.kulture), size=1, color="black")+
+  geom_point(aes(y=Ministarstvo.kulture), size=2, color="black")+
+  geom_line(aes(y=Pokrajinski.sekretarijat.za.kulturu.i.javno.informisanje),size=1, color="green")+
+geom_point(aes(y=Pokrajinski.sekretarijat.za.kulturu.i.javno.informisanje),size=2, color="green")+labs(
+    y="Ukupna sredstva u evrima",
+    title = "Ukupno izdvojena sredstva po top 5 organa po godinama",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )
+
+ggp1
+```
+
+<span style="color:blue">Beograd</span> je obeležen plavom bojom, <span style="color:red">Niš</span> crvenom, <span style="color:orange">Novi Sad</span> narandžastom, <span style="color:black">Ministarstvo kulture i informisanja</span> crnom, a <span style="color:green">Pokrajinski sekretarijat za kulturu i informisanje</span> zelenom.
+
+## Ukupna sredstava Pokrajinksi sekretarijat za kulturu i javno informisnja po godinama
+
+```{r}
+zbirnopoorgani2<- projekti%>%
+  group_by(godina,organ)%>%filter(organ=="Pokrajinski sekretarijat za kulturu i javno informisanje")%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani2$ukupnoevri<- format(zbirnopoorgani2$ukupnoevri,big.mark = ",")
+zbirnopoorgani2$ukupnorsd<- format(zbirnopoorgani2$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopoorgani2,rownames = FALSE, caption = 'Table 6: Ukupna sredstava Pokrajinksi sekretarijat za kulturu i javno informisnja po godinama od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+```{r}
+ggplot(zbirnopoorgani2, aes(godina, brojprojekata)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupan broj podržanih medijskih projekata od strane Pokrajinskog sekretarijata",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=brojprojekata), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+
+```{r}
+ggplot(zbirnopoorgani2, aes(godina, ukupnoevri)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupan sredstva podržanih medijskih projekata od strane Pokrajinskog sekretarijata",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=ukupnoevri), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+
+
+## Ministarstvo
+
+```{r}
+zbirnopoorgani3<- projekti%>%
+  group_by(godina,organ)%>%filter(organ=="Ministarstvo kulture")%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani3$ukupnoevri<- format(zbirnopoorgani3$ukupnoevri,big.mark = ",")
+zbirnopoorgani3$ukupnorsd<- format(zbirnopoorgani3$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopoorgani3,rownames = FALSE, caption = 'Table 7: Ukupna sredstava Ministarstva za kulturu i javno informisnja po godinama od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+
+
+```{r}
+ggplot(zbirnopoorgani3, aes(godina, brojprojekata)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupan broj podržanih medijskih projekata od strane Ministarstva",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=brojprojekata), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+
+
+```{r}
+ggplot(zbirnopoorgani3, aes(godina, ukupnoevri)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=brojprojekata)+ theme(legend.position = "none")+labs(
+    title = "Ukupna sredstva podržanih medijskih projekata od strane Ministarstva",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=ukupnoevri), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+
+## Lokalne samouprave
+
+```{r}
+zbirnopoorgani4<- projekti%>%
+  group_by(godina,organ)%>%filter(organ!="Ministarstvo kulture" && organ!="Pokrajinski sekretarijat za kulturu i javno informisanje")%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani4$ukupnoevri<- format(zbirnopoorgani4$ukupnoevri,big.mark = ",")
+zbirnopoorgani4$ukupnorsd<- format(zbirnopoorgani4$ukupnorsd,big.mark = ",")
+
+DT::datatable(zbirnopoorgani4,rownames = FALSE, caption = 'Table 7: Ukupna sredstava lokalnih samouprava po godinama od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 8))
+```
+
+
+```{r}
+zbirnopoorgani5 <- projekti%>%
+  group_by(godina)%>%filter(organ!="Ministarstvo kulture" && organ!="Pokrajinski sekretarijat za kulturu i javno informisanje")%>%
+  summarize(ukupnorsd=sum(dinari), ukupnoevri=sum(evri),brojprojekata=n())
+
+zbirnopoorgani5$ukupnoevri<- format(zbirnopoorgani5$ukupnoevri,big.mark = ",")
+zbirnopoorgani5$ukupnorsd<- format(zbirnopoorgani5$ukupnorsd,big.mark = ",")
+
+ggplot(zbirnopoorgani5, aes(godina, brojprojekata)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=godina)+ theme(legend.position = "none")+labs(
+    title = "Ukupan broj podržanih medijskih projekata od strane LS",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=brojprojekata), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+
+
+```{r}
+ggplot(zbirnopoorgani5, aes(godina, ukupnoevri)) +theme_bw()+ geom_bar(stat="identity")+aes(fill=godina)+ theme(legend.position = "none")+labs(
+    title = "Ukupna sredstva podržanih medijskih projekata od strane LS",
+    subtitle = "Od 2015. godine do danas",
+    caption = "Centar za održive zajednice"
+  )+ geom_text(mapping = aes(label=ukupnoevri), position = position_dodge(width = 0.9), cex=2, vjust=4)
+```
+## Opštine/Gradovi koji nisu raspisivali konkurse
+```{r}
+
+DT::datatable(projektiBezKonkursa,rownames = FALSE, caption = 'Table 8: Opštine/Gradovi koji nisu raspisivali konkurse od 2015. godine do danas', options= list(autoWidth = FALSE, scrollX = FALSE,pageLength = 10))
+
+```
+
